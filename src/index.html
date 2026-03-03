@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Gemini Decoder — Decode and preview Gemini Labs Base64 outputs with full Hebrew support" />
+  <title>Gemini Decoder</title>
+
+  <!-- Preconnect for Google Fonts (JetBrains Mono for monospace) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+
+  <!-- ── Header ─────────────────────────────────────────────────────────── -->
+  <header class="header" role="banner">
+    <div class="header-brand">
+      <div class="header-logo" aria-hidden="true">✦</div>
+      <div>
+        <div class="header-title">Gemini Decoder</div>
+        <div class="header-subtitle">Base64 → HTML · UTF-8 · Hebrew · Video · Canvas</div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button
+        id="theme-toggle"
+        class="btn btn-ghost"
+        aria-label="Switch to light mode"
+        title="Toggle theme"
+      >☀️</button>
+
+      <button
+        id="download-btn"
+        class="btn btn-secondary"
+        disabled
+        aria-label="Download decoded HTML"
+      >
+        ⬇ הורד HTML
+      </button>
+    </div>
+  </header>
+
+  <!-- ── Main ───────────────────────────────────────────────────────────── -->
+  <main class="main" role="main">
+
+    <!-- Left / Top: Input Panel -->
+    <section class="input-panel" aria-label="Input panel">
+
+      <div class="panel-header">
+        <span class="panel-title">קלט Base64</span>
+        <span class="char-count" id="char-count" aria-live="polite">0 B</span>
+      </div>
+
+      <!-- Drop Zone -->
+      <div
+        class="drop-zone"
+        id="drop-zone"
+        role="button"
+        tabindex="0"
+        aria-label="Drop zone — click or drag a text file containing a Base64 string"
+        aria-describedby="drop-zone-desc"
+      >
+        <span class="drop-icon" aria-hidden="true">📂</span>
+        <div class="drop-primary">גרור קובץ טקסט לכאן</div>
+        <div class="drop-secondary" id="drop-zone-desc">
+          או <strong>לחץ</strong> לבחירת קובץ ·
+          <kbd>Ctrl+Enter</kbd> לפענוח מהיר
+        </div>
+        <div class="rtl-hint">תומך בקבצים גדולים עם וידאו MP4, Canvas ו-JavaScript</div>
+      </div>
+
+      <!-- Hidden file input -->
+      <input
+        type="file"
+        id="file-input"
+        accept=".txt,.b64,.html,.htm,text/plain"
+        style="display:none"
+        aria-hidden="true"
+      />
+
+      <!-- Textarea -->
+      <div class="textarea-wrap">
+        <label class="textarea-label" for="base64-input">
+          או הדבק מחרוזת Base64 ישירות:
+        </label>
+        <textarea
+          id="base64-input"
+          class="base64-textarea"
+          placeholder="הדבק כאן את מחרוזת ה-Base64 שלך… (data:text/html;base64,… או טקסט גולמי)"
+          spellcheck="false"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          aria-label="Base64 input"
+        ></textarea>
+      </div>
+
+      <!-- Action Bar -->
+      <div class="action-bar">
+        <button id="decode-btn" class="btn btn-primary" aria-label="Decode Base64">
+          ▶ פענח
+        </button>
+        <button id="clear-btn" class="btn btn-secondary" aria-label="Clear all">
+          ✕ נקה
+        </button>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="progress-wrap" id="progress-wrap" role="status" aria-live="polite">
+        <div class="progress-header">
+          <span>מפענח…</span>
+          <span id="progress-label">0%</span>
+        </div>
+        <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+      </div>
+
+      <!-- Status Message -->
+      <div class="status-msg" id="status-msg" role="alert" aria-live="assertive"></div>
+
+    </section>
+
+    <!-- Right / Bottom: Preview Panel -->
+    <section class="preview-panel" id="preview-panel" aria-label="Preview panel">
+
+      <div class="preview-header">
+        <div class="panel-title">תצוגה מקדימה</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="sandbox-info">
+            <abbr title="sandbox=allow-scripts allow-same-origin — blocks top-navigation, form submission, and popups">🔒 מוגן בסנדבוקס</abbr>
+          </div>
+          <span class="preview-badge" id="preview-badge" style="display:none">פעיל</span>
+        </div>
+      </div>
+
+      <div class="preview-frame-wrap">
+        <!-- Placeholder shown before first decode -->
+        <div class="preview-placeholder" id="preview-placeholder" aria-label="Preview placeholder">
+          <span class="placeholder-icon" aria-hidden="true">🖼</span>
+          <div class="placeholder-text">תצוגה מקדימה תופיע כאן</div>
+          <div class="placeholder-sub">
+            לאחר פענוח ה-Base64, הפלט יוצג כאן בסביבה מבודדת ומאובטחת.
+            תמיכה מלאה בגיימינג Canvas, וידאו MP4 ו-JavaScript אינטראקטיבי.
+          </div>
+        </div>
+
+        <!-- Sandboxed iframe -->
+        <iframe
+          id="preview-frame"
+          class="preview-frame"
+          title="Decoded content preview"
+          sandbox="allow-scripts allow-same-origin"
+          aria-label="Decoded HTML preview"
+        ></iframe>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script src="./app.js"></script>
+
+  <!-- Show preview badge when content is loaded -->
+  <script>
+    document.getElementById('preview-frame').addEventListener('load', function () {
+      const badge = document.getElementById('preview-badge');
+      if (this.style.display !== 'none') badge.style.display = 'inline-flex';
+    });
+  </script>
+
+</body>
+</html>
